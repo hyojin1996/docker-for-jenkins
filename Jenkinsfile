@@ -2,18 +2,10 @@ pipeline {
     agent any
 
     environment {
-        // Docker 이미지 이름 설정
         DOCKER_IMAGE = 'hyosim1996/jenkins-docker-example:latest'
     }
 
     stages {
-        stage('Checkout Code') {
-            steps {
-                echo 'Checking out code from SCM...'
-                checkout scm
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image...'
@@ -21,10 +13,19 @@ pipeline {
             }
         }
 
-        stage('Run Docker Container') {
+        stage('Test Docker Command') {
             steps {
-                echo 'Running Docker container...'
+                echo 'Testing Docker command...'
                 sh 'docker run --rm $DOCKER_IMAGE'
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                echo 'Pushing Docker image to Docker Hub...'
+                withDockerRegistry([credentialsId: 'docker-hub-credentials', url: '']) {
+                    sh 'docker push $DOCKER_IMAGE'
+                }
             }
         }
     }
