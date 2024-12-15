@@ -1,19 +1,30 @@
 pipeline {
     agent any
+
+    environment {
+        // Docker 이미지 이름 설정
+        DOCKER_IMAGE = 'hyosim1996/jenkins-docker-example:latest'
+    }
+
     stages {
-        stage('Build') {
+        stage('Checkout Code') {
             steps {
-                echo 'Building...'
+                echo 'Checking out code from SCM...'
+                checkout scm
             }
         }
-        stage('Test') {
+
+        stage('Build Docker Image') {
             steps {
-                echo 'Testing...'
+                echo 'Building Docker image...'
+                sh 'docker build -t $DOCKER_IMAGE .'
             }
         }
-        stage('Deploy') {
+
+        stage('Run Docker Container') {
             steps {
-                echo 'Deploying...'
+                echo 'Running Docker container...'
+                sh 'docker run --rm $DOCKER_IMAGE'
             }
         }
     }
