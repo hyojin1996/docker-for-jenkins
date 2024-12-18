@@ -41,7 +41,7 @@ pipeline {
             steps {
                 echo 'Running integration tests...'
                 sh '''
-                docker run --rm --network -d -p 5050:5050 --name test-container $DOCKER_IMAGE
+                docker run --rm --network host -d --name test-container hyosim1996/jenkins-docker-example:latest
                 sleep 20
                 curl --retry 5 --retry-delay 5 http://localhost:5050/health | grep "OK"
                 docker stop test-container
