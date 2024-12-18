@@ -41,9 +41,9 @@ pipeline {
             steps {
                 echo 'Running integration tests...'
                 sh '''
-                docker run --rm -d -p 5000:5000 --name test-container $DOCKER_IMAGE
+                docker run --rm -d -p 5050:5050 --name test-container $DOCKER_IMAGE
                 sleep 20
-                curl --retry 5 --retry-delay 5 http://localhost:5000/health | grep "OK"
+                curl --retry 5 --retry-delay 5 http://localhost:5050/health | grep "OK"
                 docker stop test-container
                 '''
             }

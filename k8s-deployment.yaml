@@ -17,7 +17,7 @@ spec:
       - name: jenkins-app
         image: hyosim1996/jenkins-docker-example:latest
         ports:
-        - containerPort: 5000
+        - containerPort: 5050
 
 ---
 apiVersion: v1
@@ -31,5 +31,5 @@ spec:
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 5000
+      targetPort: 5050
   type: LoadBalancer
