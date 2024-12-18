@@ -3,30 +3,68 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'hyosim1996/jenkins-docker-example:latest'
+        DOCKER_CREDENTIALS = 'docker-hub-credentials' // Jenkins에 등록된 Docker Hub 인증 정보 ID
+        KUBECONFIG = '/path/to/kubeconfig' // 쿠버네티스 접근용 kubeconfig 경로
+        K8S_NAMESPACE = 'default' // Kubernetes 네임스페이스
     }
 
     stages {
-        stage('Build Docker Image') {
+        stage('Checkout Code') {
             steps {
-                echo 'Building Docker image...'
-                sh 'docker build -t $DOCKER_IMAGE .'
+                echo 'Checking out code from SCM...'
+                checkout scm
             }
         }
 
-        stage('Test Docker Command') {
+        stage('Build Docker Image') {
             steps {
-                echo 'Testing Docker command...'
-                sh 'docker run --rm $DOCKER_IMAGE'
+                echo 'Building Docker image...'
+                sh '''
+                docker build -t $DOCKER_IMAGE .
+                '''
             }
         }
 
         stage('Push Docker Image') {
             steps {
                 echo 'Pushing Docker image to Docker Hub...'
-                withDockerRegistry([credentialsId: 'docker-hub-credentials', url: '']) {
-                    sh 'docker push $DOCKER_IMAGE'
+                withCredentials([usernamePassword(credentialsId: "$DOCKER_CREDENTIALS", usernameVariable: "DOCKER_USER", passwordVariable: "DOCKER_PASS")]) {
+                    sh '''
+                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    docker push $DOCKER_IMAGE
+                    '''
                 }
             }
+        }
+
+        stage('Run Integration Tests') {
+            steps {
+                echo 'Running integration tests...'
+                sh '''
+                docker run --rm -d -p 5000:5000 --name test-container $DOCKER_IMAGE
+                sleep 5
+                curl --retry 5 --retry-delay 5 http://localhost:5000/health | grep "OK"
+                docker stop test-container
+                '''
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                echo 'Deploying to Kubernetes...'
+                sh '''
+                kubectl --kubeconfig=$KUBECONFIG set image deployment/jenkins-app jenkins-app=$DOCKER_IMAGE --namespace=$K8S_NAMESPACE
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline succeeded!'
+        }
+        failure {
+            echo 'Pipeline failed!'
         }
     }
 }
